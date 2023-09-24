@@ -57,8 +57,12 @@ app.on('activate', function () {
     }
 });
 
+app.on('before-quit', () => {
+    shell.kill();
+});
+
 ws.onopen = () => {
-    ws.send(JSON.stringify({ type: 'CLIENT_ID', id: '+12078319547' })); //TODO
+    ws.send(JSON.stringify({ type: 'CLIENT_ID', id: '219194885071175680' }));
     sendToRenderer('ws-open', null);
     console.log('WebSocket Client Connected');
 };
