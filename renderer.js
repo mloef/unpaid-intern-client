@@ -1,4 +1,19 @@
 const chatDiv = document.getElementById('chat');
+const apiKeyInput = document.getElementById('apiKey');
+const clientIdInput = document.getElementById('clientId');
+const venvPathInput = document.getElementById('venvPath');
+const submitButton = document.getElementById('submit');
+
+submitButton.addEventListener('click', () => {
+    const params = {
+        OPENAI_API_KEY: apiKeyInput.value,
+        CLIENT_ID: clientIdInput.value,
+        VENV_PATH: venvPathInput.value
+    };
+
+    // Send the parameters to the main process
+    window.electronAPI.send('submit-params', params);
+});
 
 // Listen for events from main process
 window.electronAPI.receive('ws-open', () => {
