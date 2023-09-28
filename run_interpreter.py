@@ -10,6 +10,8 @@ switch = {
     "end_of_execution": lambda data: None,#print("DEBUG: end of execution:", data),
 }
 
+print('Welcome to the Unpaid Intern! You can send "reset" to reset the conversation.')
+
 while True:
     input_text = input()
 
