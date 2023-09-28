@@ -4,14 +4,15 @@ on:
   push:
     branches:
       - main # or whichever branch you want to trigger the action
-
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: macOS-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install dependencies
       run: npm install
@@ -20,7 +21,7 @@ jobs:
       run: npx electron-packager . unpaid-intern-client --overwrite --platform=darwin --arch=x64 --prune=true --out=release-builds
 
     - name: Deploy to GitHub Pages
-      uses: JamesIves/github-pages-deploy-action@4.1.5
+      uses: JamesIves/github-pages-deploy-action@v4
       with:
         branch: gh-pages
         folder: release-builds
