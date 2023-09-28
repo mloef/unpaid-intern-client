@@ -32,6 +32,15 @@ while True:
                 buffer[k] = v
             elif buffer.get(k) and type(v) == str:
                 buffer[k] += v
+                if buffer[k][-1] == '\n':
+                    if len(buffer) != 1:
+                        raise AssertionError(f"Expected buffer length to be 1, but got {buffer}")
+                    
+                    mode = k
+                    data = buffer[mode] + '** **' #hack to preserve trailing \n in discord. doubles newline, though? why
+
+                    switch.get(mode, lambda data: print("ERROR: could not parse", data))(data)
+                    buffer = {}
             else:
                 if len(buffer) != 1:
                     raise AssertionError(f"Expected buffer length to be 1, but got {buffer}")
