@@ -20,6 +20,9 @@ jobs:
     - name: Build the Electron app
       run: npx electron-packager . unpaid-intern-client --overwrite --platform=darwin --arch=x64 --prune=true --out=release-builds
 
+    - name: Increase Git buffer
+      run: git config --global http.postBuffer 524288000
+
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
       with:
