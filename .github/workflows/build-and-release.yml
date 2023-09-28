@@ -4,15 +4,14 @@ on:
   push:
     branches:
       - main # or whichever branch you want to trigger the action
-permissions:
-  contents: write
+
 jobs:
   build:
     runs-on: macOS-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v2
 
     - name: Install dependencies
       run: npm install
@@ -20,11 +19,7 @@ jobs:
     - name: Build the Electron app
       run: npx electron-packager . unpaid-intern-client --overwrite --platform=darwin --arch=x64 --prune=true --out=release-builds
 
-    - name: Increase Git buffer
-      run: git config --global http.postBuffer 524288000
-
-    - name: Deploy to GitHub Pages
-      uses: JamesIves/github-pages-deploy-action@v4
-      with:
-        branch: gh-pages
-        folder: release-builds
+    - name: Deploy to Vercel
+      run: |
+        npm install -g vercel
+        vercel --token ${{ secrets.VERCEL_TOKEN }} --prod release-builds
