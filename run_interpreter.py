@@ -19,9 +19,6 @@ while True:
         interpreter.reset()
         print("Interpreter reset!")
         continue
-    
-    print('sup')
-    continue
 
     buffer = {}
     result = interpreter.chat(input_text, display=False, stream=True)

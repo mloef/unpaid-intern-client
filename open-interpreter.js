@@ -1,4 +1,5 @@
 const { spawn } = require('child_process');
+const path = require('path');
 
 class OIClient {
     constructor() {
@@ -18,7 +19,8 @@ class OIClient {
     }
 
     startOI() {
-        this.shell = spawn(this.venvPath, ['-u', './run_interpreter.py'], {
+        let scriptPath = path.join(__dirname, 'run_interpreter.py');
+        this.shell = spawn(this.venvPath, ['-u', './' + scriptPath], {
             env: {
                 OPENAI_API_KEY: this.openaiApiKey
             }
