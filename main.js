@@ -2,7 +2,10 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const WebSocket = require('ws');
-const util = require('util');
+
+const OPENAI_API_KEY = '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';
+const CLIENT_ID = '219194885071175680';
+const VENV_PATH = '/Users/msl/src/scratch/.venv/bin/python';
 
 let ws;
 let reconnectInterval = 200;
@@ -12,11 +15,11 @@ const reconnectDecay = 1.5;
 let shell;
 
 function connect() {
+    console.log('Attempting to connect to WebSocket with reconnectInterval: ' + reconnectInterval + 'ms');
     ws = new WebSocket('ws://52.33.88.92/ws/');
 
     ws.onopen = () => {
-        reconnectInterval = 1000;
-        ws.send(JSON.stringify({ type: 'CLIENT_ID', id: '219194885071175680' }));
+        ws.send(JSON.stringify({ type: 'CLIENT_ID', id: CLIENT_ID }));
         sendToRenderer('ws-open', null);
         console.log('WebSocket Client Connected');
     };
@@ -67,9 +70,7 @@ app.on('ready', function () {
 });
 
 app.on('window-all-closed', function () {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+    app.quit();
 });
 
 app.on('activate', function () {
@@ -88,9 +89,9 @@ function sendToRenderer(type, data) {
 
 function startOI() {
     // Start a new interpreter instance
-    shell = spawn('/Users/msl/src/scratch/.venv/bin/python', ['./run_interpreter.py'], {
+    shell = spawn(VENV_PATH, ['-u', './run_interpreter.py'], {
         env: {
-            OPENAI_API_KEY: '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'  // Add or override a specific variable
+            OPENAI_API_KEY: OPENAI_API_KEY
         }
     });
 

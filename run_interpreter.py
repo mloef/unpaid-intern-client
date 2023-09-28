@@ -17,12 +17,10 @@ while True:
         interpreter.reset()
         print("Interpreter reset!")
         continue
-
+    
     buffer = {}
     result = interpreter.chat(input_text, display=False, stream=True)
     for entry in result:
-        #print(entry)
-
         if len(entry) != 1:
             raise AssertionError(f"Expected entry length to be 1, but got {entry}")
         
@@ -46,25 +44,3 @@ while True:
     message = list(buffer.items())[0]
     mode, data = message
     switch.get(mode, lambda data: print("ERROR: could not parse", data))(data)
-
-    """response = []
-    for chat in reversed(result):
-        if chat['role'] == 'assistant':
-            if chat.get('code'):
-                response.append('```fix\n' + chat['output'] + '\n```')
-                response.append('```\n' + chat['code'] + '\n```')
-            elif chat.get('output') or chat.get('language'):
-                response.append(chat)
-                response.append('ERROR')
-                
-
-            if chat.get('message'):
-                 response.append(chat['message'])
-            else:
-                response.append(chat)
-                response.append('ERROR')
-        else:
-            break
-
-    for item in reversed(response):
-            print(item)"""
