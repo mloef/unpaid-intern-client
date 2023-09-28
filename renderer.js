@@ -12,7 +12,6 @@ window.electronAPI.receive('ws-message', (data) => {
     } else if (data.type === 'SEND_MESSAGE') {
         chatDiv.innerHTML += `<p>Message for LLM: ${data.body}</p>`;
     } else if (data.type === 'LLM_RESULT') {
-        console.log(data.body.toString())
         chatDiv.innerHTML += `<p>Message from LLM: ${data.body.toString()}</p>`;
     } else {
         chatDiv.innerHTML += `<p>Got unknown message: ${JSON.stringify(data)}</p>`;

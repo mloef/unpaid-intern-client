@@ -2,12 +2,14 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const WebSocket = require('ws');
-const os = require('os');
+const util = require('util');
 
 let ws;
-let reconnectInterval = 100; 
-const maxReconnectInterval = 3000; 
+let reconnectInterval = 200;
+const maxReconnectInterval = 3000;
 const reconnectDecay = 1.5;
+
+let shell;
 
 function connect() {
     ws = new WebSocket('ws://52.33.88.92/ws/');
@@ -42,30 +44,6 @@ function connect() {
     };
 }
 
-connect();
-
-// Start a new shell process
-const shell = spawn('bash');
-
-// Handle shell outputs
-shell.stdout.on('data', (data) => {
-    sendToRenderer('ws-message', JSON.stringify({type: 'LLM_RESULT', body: data.toString()}));
-    ws.send(JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
-});
-
-shell.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-});
-
-shell.on('close', (code) => {
-    console.log(`child process exited with code ${code}`);
-});
-
-// Send commands to the shell
-shell.stdin.write('export OPENAI_API_KEY="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"\n');
-shell.stdin.write('source /Users/msl/src/scratch/.venv/bin/activate\n');
-shell.stdin.write('interpreter -y\n');
-
 let mainWindow;
 
 function createWindow() {
@@ -82,7 +60,11 @@ function createWindow() {
     mainWindow.loadFile('index.html');
 }
 
-app.on('ready', createWindow);
+app.on('ready', function () {
+    createWindow();
+    connect();
+    startOI();
+});
 
 app.on('window-all-closed', function () {
     if (process.platform !== 'darwin') {
@@ -102,4 +84,27 @@ app.on('before-quit', () => {
 
 function sendToRenderer(type, data) {
     mainWindow.webContents.send(type, data);
+}
+
+function startOI() {
+    // Start a new interpreter instance
+    shell = spawn('/Users/msl/src/scratch/.venv/bin/python', ['./run_interpreter.py'], {
+        env: {
+            OPENAI_API_KEY: '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'  // Add or override a specific variable
+        }
+    });
+
+    // Handle shell outputs
+    shell.stdout.on('data', (data) => {
+        sendToRenderer('ws-message', JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
+        ws.send(JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
+    });
+
+    shell.stderr.on('data', (data) => {
+        console.error(`stderr: ${data}`);
+    });
+
+    shell.on('close', (code) => {
+        console.log(`child process exited with code ${code}`);
+    });
 }
