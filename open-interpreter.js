@@ -20,15 +20,21 @@ class OIClient {
 
     startOI() {
         let scriptPath = path.join(__dirname, 'run_interpreter.py');
-        this.shell = spawn(this.venvPath, ['-u', './' + scriptPath], {
+        this.shell = spawn(this.venvPath, ['-u', scriptPath], {
             env: {
                 OPENAI_API_KEY: this.openaiApiKey
             }
         });
 
         this.shell.stdout.on('data', (data) => {
-            this.mainWindow.webContents.send('ws-message', JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
-            this.wsClient.send(JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
+            if (data.toString().includes('%%END_OF_RESPONSE%%\n')) {
+                this.wsClient.send(JSON.stringify({ type: 'END_TYPING' }));
+                data = data.toString().replace('%%END_OF_RESPONSE%%\n', '');
+            }
+            if (data.toString()) {
+                this.mainWindow.webContents.send('ws-message', JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
+                this.wsClient.send(JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
+            }
         });
 
         this.shell.stderr.on('data', (data) => {
