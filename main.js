@@ -2,12 +2,12 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const { ipcMain } = require('electron');
-const initSocket = require('./websocket');
+const WebSocketClient = require('./websocket');
 
 let OPENAI_API_KEY;
 let CLIENT_ID;
 let VENV_PATH;
-let ws;
+const wsClient = new WebSocketClient();
 
 ipcMain.on('submit-params', (event, params) => {
     OPENAI_API_KEY = params.OPENAI_API_KEY;
@@ -15,7 +15,7 @@ ipcMain.on('submit-params', (event, params) => {
     VENV_PATH = params.VENV_PATH;
 
     startOI();
-    ws = initSocket(CLIENT_ID, shell, mainWindow);
+    wsClient.initSocket(CLIENT_ID, shell, mainWindow);
 });
 
 let shell;
@@ -63,8 +63,8 @@ function startOI() {
 
     // Handle shell outputs
     shell.stdout.on('data', (data) => {
-        sendToRenderer('ws-message', JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
-        ws.send(JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
+        mainWindow.webContents.send('ws-message', JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
+        wsClient.send(JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
     });
 
     shell.stderr.on('data', (data) => {
@@ -74,8 +74,4 @@ function startOI() {
     shell.on('close', (code) => {
         console.log(`child process exited with code ${code}`);
     });
-}
-
-function sendToRenderer(type, data) {
-    mainWindow.webContents.send(type, data);
 }
