@@ -4,12 +4,26 @@ const clientIdInput = document.getElementById('clientId');
 const venvPathInput = document.getElementById('venvPath');
 const submitButton = document.getElementById('submit');
 
+
+// Load default values from the JSON file and set them in the input fields
+function loadDefaults() {
+    apiKeyInput.value = localStorage.getItem('OPENAI_API_KEY') || '';
+    clientIdInput.value = localStorage.getItem('CLIENT_ID') || '';
+    venvPathInput.value = localStorage.getItem('VENV_PATH') || '';
+}
+
 submitButton.addEventListener('click', () => {
     const params = {
         OPENAI_API_KEY: apiKeyInput.value,
         CLIENT_ID: clientIdInput.value,
         VENV_PATH: venvPathInput.value
     };
+
+    // Save entered values to localStorage
+    localStorage.setItem('OPENAI_API_KEY', params.OPENAI_API_KEY);
+    localStorage.setItem('CLIENT_ID', params.CLIENT_ID);
+    localStorage.setItem('VENV_PATH', params.VENV_PATH);
+
 
     // Send the parameters to the main process
     window.electronAPI.send('submit-params', params);
@@ -40,3 +54,6 @@ window.electronAPI.receive('ws-error', (error) => {
 window.electronAPI.receive('ws-close', (data) => {
     chatDiv.innerHTML += 'WebSocket closed with code:' + data.code + ' and reason:' + data.reason;
 });
+
+// Call the loadDefaults function when the page is loaded
+window.onload = loadDefaults;
