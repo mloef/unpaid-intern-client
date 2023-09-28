@@ -1,25 +1,16 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
-const { ipcMain } = require('electron');
 const WebSocketClient = require('./websocket');
+const OIClient = require('./open-interpreter');
 
-let OPENAI_API_KEY;
-let CLIENT_ID;
-let VENV_PATH;
+let mainWindow;
 const wsClient = new WebSocketClient();
+const openai = new OIClient();
 
 ipcMain.on('submit-params', (event, params) => {
-    OPENAI_API_KEY = params.OPENAI_API_KEY;
-    CLIENT_ID = params.CLIENT_ID;
-    VENV_PATH = params.VENV_PATH;
-
-    startOI();
-    wsClient.initSocket(CLIENT_ID, shell, mainWindow);
+    openai.initialize(params.OPENAI_API_KEY, params.VENV_PATH, mainWindow, wsClient);
+    wsClient.initSocket(params.CLIENT_ID, openai.getShell(), mainWindow);
 });
-
-let shell;
-let mainWindow;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -35,43 +26,16 @@ function createWindow() {
     mainWindow.loadFile('index.html');
 }
 
-app.on('ready', function () {
-    createWindow();
-});
+app.on('ready', createWindow);
 
-app.on('window-all-closed', function () {
-    app.quit();
-});
+app.on('window-all-closed', app.quit);
 
-app.on('activate', function () {
+app.on('activate', () => {
     if (mainWindow === null) {
         createWindow();
     }
 });
 
 app.on('before-quit', () => {
-    shell.kill();
+    openai.killShell();
 });
-
-function startOI() {
-    // Start a new interpreter instance
-    shell = spawn(VENV_PATH, ['-u', './run_interpreter.py'], {
-        env: {
-            OPENAI_API_KEY: OPENAI_API_KEY
-        }
-    });
-
-    // Handle shell outputs
-    shell.stdout.on('data', (data) => {
-        mainWindow.webContents.send('ws-message', JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
-        wsClient.send(JSON.stringify({ type: 'LLM_RESULT', body: data.toString() }));
-    });
-
-    shell.stderr.on('data', (data) => {
-        console.error(`stderr: ${data}`);
-    });
-
-    shell.on('close', (code) => {
-        console.log(`child process exited with code ${code}`);
-    });
-}
