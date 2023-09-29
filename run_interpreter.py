@@ -1,10 +1,10 @@
 import multiprocessing
-import threading
 import interpreter
 import queue  # to handle the Empty exception from Queue.get_nowait()
-import os
+import time
+from typing import Callable, Dict, Tuple
 
-switch = {
+switch: Dict[str, Callable[[str], None]] = {
     "message": lambda data: print(data),
     "output": lambda data: print("```fix\n" + data + "\n```"),
     "code": lambda data: print("```\n" + data + "\n```"),
@@ -15,13 +15,16 @@ switch = {
     "end_of_response": lambda data: print("%%END_OF_RESPONSE%%"),
 }
 
-def worker_process(input_queue, result_queue):
-    print('starting worker process')
+def worker_process(input_queue: queue.Queue[str], result_queue: queue.Queue[Tuple[str, str]]) -> None:
     while True:
-        input_text = input_queue.get()
-        print('got input_text:', input_text)
+        while True:
+            try:
+                input_text = input_queue.get_nowait() #why can't I just use get()? dunno, but it hangs without nowait
+                break
+            except queue.Empty:
+                pass
     
-        buffer = {}
+        buffer: Dict[str, str] = {}
         result = interpreter.chat(input_text, display=False, stream=True)
         
         for entry in result:
@@ -31,7 +34,7 @@ def worker_process(input_queue, result_queue):
             k, v = list(entry.items())[0]
             if not buffer:
                 buffer[k] = v
-            elif buffer.get(k) and type(v) == str:
+            elif buffer.get(k) and isinstance(v, str):
                 buffer[k] += v
                 if buffer[k][-1] == '\n':
                     if len(buffer) != 1:
@@ -59,21 +62,17 @@ def worker_process(input_queue, result_queue):
 
         result_queue.put(("end_of_response", ""))
 
-def result_listener(result_queue):
+def result_listener(result_queue: queue.Queue[Tuple[str, str]]) -> None:
     while True:
-        try:
-            mode, data = result_queue.get_nowait()  # non-blocking get
-            switch.get(mode, lambda data: print("ERROR: could not parse", data))(data)
-        except queue.Empty:
-            pass
+        mode, data = result_queue.get()
+        switch.get(mode, lambda data: print("ERROR: could not parse", data))(data)
 
-def main():
+def main() -> None:
     print('Welcome to unpaid intern! Send "reset" to reset the conversation.')
     print('%%END_OF_RESPONSE%%')
 
-    current_process = None
-    result_queue = multiprocessing.Queue()
-    input_queue = multiprocessing.Queue()
+    result_queue: multiprocessing.Queue[Tuple[str, str]] = multiprocessing.Queue()
+    input_queue: multiprocessing.Queue[str] = multiprocessing.Queue()
 
     # Start the worker process for the first time
     current_process = multiprocessing.Process(target=worker_process, args=(input_queue, result_queue))
@@ -84,22 +83,18 @@ def main():
 
     while True:
         input_text = input()
-        print(input_queue.empty())
         if input_text == "reset":
             if current_process and current_process.is_alive():
                 current_process.terminate()
                 current_process.join()
-                print("The intern was fired :(", current_process.is_alive())
             
             # Start a new process after termination
             current_process = multiprocessing.Process(target=worker_process, args=(input_queue, result_queue))
             current_process.start()
             
-            print("The intern forgot everything :)")
+            print("that intern has been fired :(")
             print('%%END_OF_RESPONSE%%')
         else:
-            print('input:', input_text)
-            print('current_process.is_alive():', current_process.is_alive())
             input_queue.put(input_text)
         
 if __name__ == '__main__':
