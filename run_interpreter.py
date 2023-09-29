@@ -1,7 +1,6 @@
 import multiprocessing
-import interpreter
 import queue  # to handle the Empty exception from Queue.get_nowait()
-import time
+import threading
 from typing import Callable, Dict, Tuple
 
 switch: Dict[str, Callable[[str], None]] = {
@@ -16,6 +15,8 @@ switch: Dict[str, Callable[[str], None]] = {
 }
 
 def worker_process(input_queue: queue.Queue[str], result_queue: queue.Queue[Tuple[str, str]]) -> None:
+    import interpreter #import starts the interpreter, so we only do it here so it only runs once
+
     while True:
         while True:
             try:
@@ -64,8 +65,12 @@ def worker_process(input_queue: queue.Queue[str], result_queue: queue.Queue[Tupl
 
 def result_listener(result_queue: queue.Queue[Tuple[str, str]]) -> None:
     while True:
-        mode, data = result_queue.get()
-        switch.get(mode, lambda data: print("ERROR: could not parse", data))(data)
+        try:
+            mode, data = result_queue.get_nowait()
+            switch.get(mode, lambda data: print("ERROR: could not parse", data))(data)
+        except queue.Empty:
+            pass
+        
 
 def main() -> None:
     print('Welcome to unpaid intern! Send "reset" to reset the conversation.')
@@ -79,7 +84,7 @@ def main() -> None:
     current_process.start()
 
     # Start the process listening to results
-    multiprocessing.Process(target=result_listener, args=(result_queue,), daemon=True).start()
+    threading.Thread(target=result_listener, args=(result_queue,), daemon=True).start()
 
     while True:
         input_text = input()
@@ -92,7 +97,7 @@ def main() -> None:
             current_process = multiprocessing.Process(target=worker_process, args=(input_queue, result_queue))
             current_process.start()
             
-            print("that intern has been fired :(")
+            print("that intern did not get a return offer :(")
             print('%%END_OF_RESPONSE%%')
         else:
             input_queue.put(input_text)
