@@ -63,7 +63,7 @@ def respond(input_text: str) -> None:
 
 
 def main() -> None:
-    print('Welcome to unpaid intern! Send "reset" to reset the conversation.')
+    print('Welcome to unpaid intern! Send "reset" to interrupt the intern and reset the conversation.')
     print("%%END_OF_RESPONSE%%")
 
     while True:

@@ -10,6 +10,6 @@ first time setup:
 6. Enter each of the above in the corresponding sections of the form and hit submit
 7. The bot will dm you!
 
-You can send `reset` via discord to reset the conversation.
+You can send `reset` via discord to interrupt the intern and reset the conversation.
 
 If you want the bot to be reliable while you're afk, open terminal and run `caffeine` to keep your computer from sleeping.
