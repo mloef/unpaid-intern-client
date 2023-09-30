@@ -5,11 +5,11 @@ const OIClient = require('./open-interpreter');
 
 let mainWindow;
 const wsClient = new WebSocketClient();
-const openai = new OIClient();
+const oiClient = new OIClient();
 
 ipcMain.on('submit-params', (event, params) => {
-    openai.initialize(params.OPENAI_API_KEY, params.VENV_PATH, mainWindow, wsClient);
-    wsClient.initSocket(params.CLIENT_ID, openai.getShell(), mainWindow);
+    oiClient.initialize(params.OPENAI_API_KEY, params.VENV_PATH, mainWindow, wsClient);
+    wsClient.initSocket(params.CLIENT_ID, oiClient, mainWindow);
 });
 
 function createWindow() {
@@ -37,5 +37,5 @@ app.on('activate', () => {
 });
 
 app.on('before-quit', () => {
-    openai.killShell();
+    oiClient.killShell();
 });

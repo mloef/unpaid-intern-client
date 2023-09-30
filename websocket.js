@@ -8,7 +8,7 @@ class WebSocketClient {
         this.reconnectDecay = 1.5;
 
         this.clientId = null;
-        this.shell = null;
+        this.oiClient = null;
         this.mainWindow = null;
     }
 
@@ -25,8 +25,12 @@ class WebSocketClient {
         this.ws.onmessage = (event) => {
             this.sendToRenderer('ws-message', event.data);
             const data = JSON.parse(event.data);
-            if (data.type === 'SEND_MESSAGE') {
-                this.shell.stdin.write(data.body + '\n');
+            if (data.type === 'SEND_MESSAGE' && data.body === 'reset') {
+                this.oiClient.restartShell();
+                this.ws.send(JSON.stringify({ type: 'LLM_RESULT', body: 'that intern did not receive a return offer :(' }));
+            }
+            else if (data.type === 'SEND_MESSAGE') {
+                this.oiClient.getShell().stdin.write(data.body + '\n');
             }
         };
 
@@ -45,9 +49,9 @@ class WebSocketClient {
         };
     }
 
-    initSocket(clientId, shell, mainWindow) {
+    initSocket(clientId, oiClient, mainWindow) {
         this.clientId = clientId;
-        this.shell = shell;
+        this.oiClient = oiClient;
         this.mainWindow = mainWindow;
         this.connect();
     }

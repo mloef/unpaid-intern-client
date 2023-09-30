@@ -52,6 +52,11 @@ class OIClient {
         }
     }
 
+    restartShell() {
+        this.killShell();
+        this.startOI();
+    }
+
     getShell() {
         return this.shell;
     }
